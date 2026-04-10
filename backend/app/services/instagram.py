@@ -1,4 +1,5 @@
 import re
+import os
 from typing import Any
 from urllib.parse import urlparse
 
@@ -73,9 +74,11 @@ def _ydl_options() -> dict[str, Any]:
     if settings.instagram_cookies_file:
         options["cookiefile"] = settings.instagram_cookies_file
     elif settings.instagram_cookies_browser:
-        browser = settings.instagram_cookies_browser.strip().lower()
-        profile = (settings.instagram_cookies_browser_profile or "").strip()
-        options["cookiesfrombrowser"] = (browser, profile) if profile else (browser,)
+        # Browser cookie extraction is not available in Vercel serverless runtime.
+        if not os.getenv("VERCEL"):
+            browser = settings.instagram_cookies_browser.strip().lower()
+            profile = (settings.instagram_cookies_browser_profile or "").strip()
+            options["cookiesfrombrowser"] = (browser, profile) if profile else (browser,)
 
     return options
 
@@ -89,6 +92,12 @@ def _extract(url: str) -> dict[str, Any]:
         return info
     except yt_dlp.utils.DownloadError as exc:
         lower_msg = str(exc).lower()
+        if "cookies" in lower_msg and ("browser" in lower_msg or "profile" in lower_msg or "decrypt" in lower_msg):
+            raise AppError(
+                "Cookie browser profile is not accessible in this environment. "
+                "On Vercel, leave INSTAGRAM_COOKIES_BROWSER empty and use public links only.",
+                400,
+            ) from exc
         if (
             "private" in lower_msg
             or "login" in lower_msg
