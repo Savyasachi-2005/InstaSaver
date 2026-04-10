@@ -1,7 +1,9 @@
 import re
 import os
+from html import unescape
 from typing import Any
 from urllib.parse import urlparse
+from urllib.request import Request as UrlRequest, urlopen
 
 import yt_dlp
 
@@ -58,6 +60,47 @@ def _resolve_media_url(entry: dict[str, Any]) -> str | None:
             return value
 
     return None
+
+
+def _meta_content(html_text: str, prop_names: list[str]) -> str | None:
+    for tag_match in re.finditer(r"<meta[^>]+>", html_text, re.IGNORECASE):
+        tag = tag_match.group(0)
+        lower = tag.lower()
+        if not any(f'property="{name}"' in lower or f"property='{name}'" in lower for name in prop_names):
+            continue
+        content_match = re.search(r"content=['\"]([^'\"]+)['\"]", tag, re.IGNORECASE)
+        if content_match:
+            return unescape(content_match.group(1).strip())
+    return None
+
+
+def _extract_public_fallback(url: str) -> list[MediaItem]:
+    fallback_url = re.sub(r"^https?://(www\.)?instagram\.com", "https://ddinstagram.com", url.strip(), flags=re.IGNORECASE)
+    req = UrlRequest(
+        fallback_url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+    )
+    with urlopen(req, timeout=20) as response:
+        html_text = response.read().decode("utf-8", errors="ignore")
+
+    media_url = _meta_content(html_text, ["og:video:secure_url", "og:video", "og:image:secure_url", "og:image"])
+    if not media_url:
+        return []
+
+    media_type = "video" if "og:video" in html_text.lower() else "image"
+    title = _meta_content(html_text, ["og:title"]) or "Instagram Media"
+    return [
+        MediaItem(
+            id="fallback-0",
+            media_type=media_type,
+            media_url=media_url,
+            thumbnail_url=None,
+            title=title,
+        )
+    ]
 
 
 def _ydl_options() -> dict[str, Any]:
@@ -148,7 +191,14 @@ def extract_reel(url: str) -> list[MediaItem]:
     if not _is_instagram_url(cleaned) or not _is_reel_url(cleaned):
         raise AppError("Please provide a valid Instagram Reel URL.", 422)
 
-    info = _extract(cleaned)
+    try:
+        info = _extract(cleaned)
+    except AppError as exc:
+        if exc.status_code == 403:
+            fallback_items = _extract_public_fallback(cleaned)
+            if fallback_items:
+                return fallback_items
+        raise
     entries = info.get("entries") or [info]
 
     media_items: list[MediaItem] = []
@@ -179,7 +229,14 @@ def extract_post(url: str) -> list[MediaItem]:
     if not _is_instagram_url(cleaned) or not _is_post_url(cleaned):
         raise AppError("Please provide a valid Instagram Post URL.", 422)
 
-    info = _extract(cleaned)
+    try:
+        info = _extract(cleaned)
+    except AppError as exc:
+        if exc.status_code == 403:
+            fallback_items = _extract_public_fallback(cleaned)
+            if fallback_items:
+                return fallback_items
+        raise
     entries = info.get("entries") or [info]
 
     media_items: list[MediaItem] = []
