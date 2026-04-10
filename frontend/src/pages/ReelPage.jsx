@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import HistoryPanel from "../components/HistoryPanel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { fetchReel } from "../services/api";
-import { downloadMedia } from "../utils/download";
+import { downloadMedia, getStreamUrl } from "../utils/download";
 import { pushHistory, loadHistory } from "../utils/storage";
 import { isValidReelUrl } from "../utils/validators";
 
@@ -107,7 +107,7 @@ function ReelPage() {
         {activeMedia && (
           <div className="card-glass animate-[fadeIn_300ms_ease-in-out] p-5 sm:p-6">
             <h2 className="font-display text-xl text-white">Preview</h2>
-            <video controls className="mt-4 max-h-[520px] w-full rounded-xl border border-slate-700/70" src={activeMedia.media_url} />
+            <video controls className="mt-4 max-h-[520px] w-full rounded-xl border border-slate-700/70" src={getStreamUrl(activeMedia.media_url)} />
             <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <button
                 type="button"

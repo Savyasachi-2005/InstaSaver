@@ -5,6 +5,14 @@ function normalizeApiBase(input) {
 
 const API_BASE = normalizeApiBase(import.meta.env.VITE_API_BASE_URL);
 
+/**
+ * Build a proxied stream URL for media preview (video/image).
+ * Routes through the backend to avoid Instagram CDN CORS blocks.
+ */
+export function getStreamUrl(mediaUrl) {
+  return `${API_BASE}/download/stream?url=${encodeURIComponent(mediaUrl)}`;
+}
+
 export async function downloadMedia(url, filename = "media") {
   const downloadUrl = `${API_BASE}/download/file?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
   const response = await fetch(downloadUrl);
@@ -25,3 +33,4 @@ export async function downloadMedia(url, filename = "media") {
 
   window.URL.revokeObjectURL(objectUrl);
 }
+

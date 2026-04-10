@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import HistoryPanel from "../components/HistoryPanel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { fetchPost } from "../services/api";
-import { downloadMedia } from "../utils/download";
+import { downloadMedia, getStreamUrl } from "../utils/download";
 import { loadHistory, pushHistory } from "../utils/storage";
 import { isValidPostUrl } from "../utils/validators";
 
@@ -108,9 +108,9 @@ function PostPage() {
               <article key={item.id} className="card-glass overflow-hidden p-3">
                 <div className="overflow-hidden rounded-lg border border-slate-700/70 bg-black/40">
                   {item.media_type === "video" ? (
-                    <video controls src={item.media_url} className="h-56 w-full object-cover sm:h-64" />
+                    <video controls src={getStreamUrl(item.media_url)} className="h-56 w-full object-cover sm:h-64" />
                   ) : (
-                    <img src={item.media_url} alt={item.title || "Instagram post"} className="h-56 w-full object-cover sm:h-64" />
+                    <img src={getStreamUrl(item.media_url)} alt={item.title || "Instagram post"} className="h-56 w-full object-cover sm:h-64" />
                   )}
                 </div>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
