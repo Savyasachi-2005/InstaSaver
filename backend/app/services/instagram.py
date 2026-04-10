@@ -75,32 +75,35 @@ def _meta_content(html_text: str, prop_names: list[str]) -> str | None:
 
 
 def _extract_public_fallback(url: str) -> list[MediaItem]:
-    fallback_url = re.sub(r"^https?://(www\.)?instagram\.com", "https://ddinstagram.com", url.strip(), flags=re.IGNORECASE)
-    req = UrlRequest(
-        fallback_url,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Accept-Language": "en-US,en;q=0.9",
-        },
-    )
-    with urlopen(req, timeout=20) as response:
-        html_text = response.read().decode("utf-8", errors="ignore")
-
-    media_url = _meta_content(html_text, ["og:video:secure_url", "og:video", "og:image:secure_url", "og:image"])
-    if not media_url:
-        return []
-
-    media_type = "video" if "og:video" in html_text.lower() else "image"
-    title = _meta_content(html_text, ["og:title"]) or "Instagram Media"
-    return [
-        MediaItem(
-            id="fallback-0",
-            media_type=media_type,
-            media_url=media_url,
-            thumbnail_url=None,
-            title=title,
+    try:
+        fallback_url = re.sub(r"^https?://(www\.)?instagram\.com", "https://ddinstagram.com", url.strip(), flags=re.IGNORECASE)
+        req = UrlRequest(
+            fallback_url,
+            headers={
+                "User-Agent": "Mozilla/5.0",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
         )
-    ]
+        with urlopen(req, timeout=20) as response:
+            html_text = response.read().decode("utf-8", errors="ignore")
+
+        media_url = _meta_content(html_text, ["og:video:secure_url", "og:video", "og:image:secure_url", "og:image"])
+        if not media_url:
+            return []
+
+        media_type = "video" if "og:video" in html_text.lower() else "image"
+        title = _meta_content(html_text, ["og:title"]) or "Instagram Media"
+        return [
+            MediaItem(
+                id="fallback-0",
+                media_type=media_type,
+                media_url=media_url,
+                thumbnail_url=None,
+                title=title,
+            )
+        ]
+    except Exception:
+        return []
 
 
 def _ydl_options() -> dict[str, Any]:
