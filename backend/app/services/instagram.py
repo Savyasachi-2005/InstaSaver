@@ -85,6 +85,10 @@ def _ydl_options() -> dict[str, Any]:
 
 def _extract(url: str) -> dict[str, Any]:
     settings = get_settings()
+    is_vercel_runtime = bool(os.getenv("VERCEL"))
+    effective_auth_enabled = bool(settings.instagram_cookies_file) or (
+        bool(settings.instagram_cookies_browser) and not is_vercel_runtime
+    )
     try:
         with yt_dlp.YoutubeDL(_ydl_options()) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -119,8 +123,7 @@ def _extract(url: str) -> dict[str, Any]:
             or "forbidden" in lower_msg
             or "not available" in lower_msg
         ):
-            has_auth_config = bool(settings.instagram_cookies_file or settings.instagram_cookies_browser)
-            if not has_auth_config:
+            if not effective_auth_enabled:
                 raise AppError(
                     "Instagram is blocking anonymous access for this link. "
                     "Some public reels/posts still require authenticated sessions.",
