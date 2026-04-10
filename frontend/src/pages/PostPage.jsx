@@ -12,6 +12,7 @@ function PostPage() {
   const [url, setUrl] = useState("");
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [history, setHistory] = useState(loadHistory());
 
   const handleSubmit = async (event) => {
@@ -24,11 +25,17 @@ function PostPage() {
 
     setLoading(true);
     setPosts([]);
+    setProgress(15);
+
+    const timer = window.setInterval(() => {
+      setProgress((prev) => (prev >= 90 ? 90 : prev + 8));
+    }, 220);
 
     try {
       const response = await fetchPost(url.trim());
       const media = response.media || [];
       setPosts(media);
+      setProgress(100);
       toast.success(`Fetched ${media.length} post item${media.length === 1 ? "" : "s"}`);
       setHistory(
         pushHistory({
@@ -42,6 +49,8 @@ function PostPage() {
       const message = error?.response?.data?.detail || "Failed to fetch post.";
       toast.error(message);
     } finally {
+      window.clearInterval(timer);
+      setTimeout(() => setProgress(0), 500);
       setLoading(false);
     }
   };
@@ -85,6 +94,12 @@ function PostPage() {
               {loading ? <LoadingSpinner label="Fetching" /> : "Get Post"}
             </button>
           </form>
+
+          {progress > 0 && (
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-700/80">
+              <div className="h-full rounded-full bg-gradient-to-r from-aqua to-mist transition-all" style={{ width: `${progress}%` }} />
+            </div>
+          )}
         </div>
 
         {!!posts.length && (
