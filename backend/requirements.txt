@@ -3,3 +3,4 @@ uvicorn[standard]==0.35.0
 python-dotenv==1.1.1
 pydantic-settings==2.10.1
 yt-dlp>=2023.12.30
+curl_cffi>=0.7.0

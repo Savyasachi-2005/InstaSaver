@@ -10,9 +10,6 @@ class Settings(BaseSettings):
     cors_origin_regex: str | None = r"^https://.*\.vercel\.app$"
     rate_limit_per_minute: int = 20
     request_timeout_seconds: int = 20
-    instagram_cookies_file: str | None = None
-    instagram_cookies_browser: str | None = None
-    instagram_cookies_browser_profile: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
