@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "InstaSaver API"
     api_prefix: str = "/api"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origin_regex: str | None = None
     rate_limit_per_minute: int = 20
     request_timeout_seconds: int = 20
     instagram_cookies_file: str | None = None

@@ -1,7 +1,12 @@
 import axios from "axios";
 
+function normalizeApiBase(input) {
+  const base = (input || "http://localhost:8000/api").replace(/\/+$/, "");
+  return /\/api$/i.test(base) ? base : `${base}/api`;
+}
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api",
+  baseURL: normalizeApiBase(import.meta.env.VITE_API_BASE_URL),
   timeout: 20000,
 });
 
