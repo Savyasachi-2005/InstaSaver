@@ -92,7 +92,18 @@ def _extract(url: str) -> dict[str, Any]:
         return info
     except yt_dlp.utils.DownloadError as exc:
         lower_msg = str(exc).lower()
-        if "cookies" in lower_msg and ("browser" in lower_msg or "profile" in lower_msg or "decrypt" in lower_msg):
+        cookie_profile_failure_markers = [
+            "failed to decrypt",
+            "cookie database",
+            "could not copy",
+            "browser cookies are locked",
+            "could not find chrome",
+            "chrome cookie",
+            "edge cookie",
+            "brave cookie",
+            "firefox profile",
+        ]
+        if any(marker in lower_msg for marker in cookie_profile_failure_markers):
             raise AppError(
                 "Cookie browser profile is not accessible in this environment. "
                 "On Vercel, leave INSTAGRAM_COOKIES_BROWSER empty and use public links only.",
@@ -103,6 +114,8 @@ def _extract(url: str) -> dict[str, Any]:
             or "login" in lower_msg
             or "log in" in lower_msg
             or "cookies-from-browser" in lower_msg
+            or "unauthorized" in lower_msg
+            or "forbidden" in lower_msg
             or "not available" in lower_msg
         ):
             raise AppError(
@@ -110,6 +123,8 @@ def _extract(url: str) -> dict[str, Any]:
                 "INSTAGRAM_COOKIES_FILE or INSTAGRAM_COOKIES_BROWSER in backend/.env.",
                 403,
             ) from exc
+        if "too many requests" in lower_msg or "rate limit" in lower_msg or "try again later" in lower_msg:
+            raise AppError("Instagram is rate limiting requests right now. Please retry after a short wait.", 429) from exc
         raise AppError("Unsupported Instagram link or extraction failed.", 400) from exc
     except AppError:
         raise
